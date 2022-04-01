@@ -11,30 +11,32 @@ namespace Company.Controllers
     public class FuncionariosController : ControllerBase
     {
         private IWebHostEnvironment _webHostEnviroment;
-        public FuncionariosController(IWebHostEnvironment webHostEnviroment) {
+        private CompanyContext _context;
+        public FuncionariosController(IWebHostEnvironment webHostEnviroment, CompanyContext context) {
             _webHostEnviroment = webHostEnviroment;
+            _context = context;
         }
 
         [HttpGet]
-        [Route("{id}")]
-        public async Task<IActionResult> FindAll([FromServices] CompanyContext context, [FromRoute]int id) {
-            var DepartamentDoestnExists = CheckDepartament(context,id);
-            var funcionarios = await context.Funcionarios.Where(x => x.DepartamentosId == id).ToListAsync();
+        [Route("{idDepartamento}")]
+        public async Task<IActionResult> FindAll([FromRoute]int idDepartamento) {
+            var DepartamentDoestnExists = CheckDepartament(idDepartamento);
+            var funcionarios = await _context.Funcionarios.Where(x => x.DepartamentosId == idDepartamento).ToListAsync();
 
             if(DepartamentDoestnExists) {
                 return NotFound("Departamento não encontrado");
             }
 
-            return funcionarios.Count > 0 ? Ok(funcionarios) : NoContent();
+            return funcionarios.Count > 0 ? Ok(funcionarios) : NotFound();
 
         }
 
         [HttpGet]
-        [Route("{id}/funcionario/{idFuncionario}")]
-        public async Task<IActionResult> findById([FromServices] CompanyContext context, [FromRoute]int id, [FromRoute] int idFuncionario) {
+        [Route("{idDepartamento}/funcionario/{idFuncionario}")]
+        public async Task<IActionResult> findById([FromRoute]int idDepartamento, [FromRoute] int idFuncionario) {
             try
             {
-                var funcionario = await context.Funcionarios.Where(x => x.DepartamentosId == id).Where(y => y.Id == idFuncionario).FirstOrDefaultAsync();
+                var funcionario = await _context.Funcionarios.Where(x => x.DepartamentosId == idDepartamento).Where(y => y.Id == idFuncionario).FirstOrDefaultAsync();
                 return funcionario != null ? Ok(funcionario) : NotFound("Funcionário não encontrado");
 
             }
@@ -45,10 +47,10 @@ namespace Company.Controllers
         }
 
         [HttpPost]
-        [Route("{id}")]
-        public async Task<IActionResult> Insert([FromServices] CompanyContext context, [FromRoute]int id, Funcionarios funcionario) {
+        [Route("{idDepartamento}")]
+        public async Task<IActionResult> Insert([FromServices] CompanyContext context, [FromRoute]int idDepartamento, Funcionarios funcionario) {
 
-            var DepartamentDoestnExists = CheckDepartament(context,id);
+            var DepartamentDoestnExists = CheckDepartament(idDepartamento);
 
             if(DepartamentDoestnExists) {
                 return NotFound("Departamento não encontrado");
@@ -60,14 +62,14 @@ namespace Company.Controllers
                 Nome = funcionario.Nome,
                 Foto = funcionario.Foto,
                 Rg = funcionario.Rg,
-                DepartamentosId = id
+                DepartamentosId = idDepartamento
             };
 
             try
             {
                 await context.AddAsync(func);
                 await context.SaveChangesAsync();
-                return Created($"v1/funcionarios/{id}","Criado Com Sucesso");
+                return Created($"v1/funcionarios/{idDepartamento}","Criado Com Sucesso");
             }
             catch (Exception)
             {
@@ -78,16 +80,16 @@ namespace Company.Controllers
         }
 
         [HttpPut]
-        [Route("{id}/funcionario/{idFuncionario}")]
-        public async Task<IActionResult> Put([FromServices] CompanyContext context, [FromRoute]int id, [FromRoute] int idFuncionario, Funcionarios funcionario) {
+        [Route("{idDepartamento}/funcionario/{idFuncionario}")]
+        public async Task<IActionResult> Put([FromServices] CompanyContext context, [FromRoute]int idDepartamento, [FromRoute] int idFuncionario, Funcionarios funcionario) {
 
-            var DepartamentDoestnExists = CheckDepartament(context,id);
+            var DepartamentDoestnExists = CheckDepartament(idDepartamento);
 
             if(DepartamentDoestnExists) {
                 return NotFound("Departamento não encontrado");
             }
 
-            var func = await context.Funcionarios.Where(x => x.DepartamentosId == id).Where(x => x.Id == idFuncionario).FirstOrDefaultAsync();
+            var func = await context.Funcionarios.Where(x => x.DepartamentosId == idDepartamento).Where(x => x.Id == idFuncionario).FirstOrDefaultAsync();
 
             if(func == null) {
                 return NotFound("Funcionário não encontrado nesse setor");
@@ -98,9 +100,9 @@ namespace Company.Controllers
             func.Rg = func.Rg != funcionario.Rg ? funcionario.Rg : func.Rg;
             func.DepartamentosId = func.DepartamentosId != funcionario.DepartamentosId ? funcionario.DepartamentosId : func.DepartamentosId;
 
-            if(CheckDepartament(context,func.DepartamentosId)) {
-                return NotFound("Departamento não existe, por favor escolha um departamento existente");
-            }
+            // if(CheckDepartament(_context,func.DepartamentosId)) {
+            //     return NotFound("Departamento não existe, por favor escolha um departamento existente");
+            // }
 
             try
             {
@@ -117,16 +119,16 @@ namespace Company.Controllers
         }
 
         [HttpDelete]
-        [Route("{id}/funcionario/{idFuncionario}")]
-        public async Task<IActionResult> Delete([FromServices] CompanyContext context, [FromRoute]int id, [FromRoute] int idFuncionario) {
+        [Route("{idDepartamento}/funcionario/{idFuncionario}")]
+        public async Task<IActionResult> Delete([FromRoute]int idDepartamento, [FromRoute] int idFuncionario) {
 
-            var DepartamentDoestnExists = CheckDepartament(context,id);
+            var DepartamentDoestnExists = CheckDepartament(idDepartamento);
 
             if(DepartamentDoestnExists) {
                 return NotFound("Departamento não encontrado");
             }
 
-            var func = await context.Funcionarios.Where(x => x.DepartamentosId == id).Where(x => x.Id == idFuncionario).FirstOrDefaultAsync();
+            var func = await _context.Funcionarios.Where(x => x.DepartamentosId == idDepartamento).Where(x => x.Id == idFuncionario).FirstOrDefaultAsync();
 
             if(func == null) {
                 return NotFound("Funcionário não encontrado nesse setor");
@@ -134,8 +136,8 @@ namespace Company.Controllers
 
             try
             {
-                context.Remove(func);
-                await context.SaveChangesAsync();
+                _context.Remove(func);
+                await _context.SaveChangesAsync();
                 return Ok("Funcionario Removido");
             }
             catch (Exception)
@@ -179,10 +181,10 @@ namespace Company.Controllers
 
         [HttpGet]
         [Route("upload/{idFuncionario}")]
-        public async Task<IActionResult> GetImage([FromServices] CompanyContext context, [FromRoute] int idFuncionario) {
+        public async Task<IActionResult> GetImage([FromRoute] int idFuncionario) {
              try
             {
-                var funcionario = await context.Funcionarios.Where(y => y.Id == idFuncionario).FirstOrDefaultAsync();
+                var funcionario = await _context.Funcionarios.Where(y => y.Id == idFuncionario).FirstOrDefaultAsync();
                 string path = _webHostEnviroment.ContentRootPath + funcionario.Foto;
 
                 return funcionario != null? PhysicalFile(funcionario.Foto, contentType: "image/jpeg", enableRangeProcessing: true) : NotFound();
@@ -196,8 +198,8 @@ namespace Company.Controllers
 
 
 
-        private bool CheckDepartament([FromServices] CompanyContext context, int id) {
-            var departament = context.Departamentos.Where(x => x.Id == id).FirstOrDefault();
+        private bool CheckDepartament(int id) {
+            var departament = _context.Departamentos.Where(x => x.Id == id).FirstOrDefault();
 
             return departament == null ? true : false;
         }

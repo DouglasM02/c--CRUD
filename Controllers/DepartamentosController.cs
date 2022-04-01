@@ -11,11 +11,16 @@ namespace Company.Controllers
     [Route("v1/departamentos")]
     public class DepartamentosController : ControllerBase
     {
+        private CompanyContext _context;
+        public DepartamentosController(CompanyContext context) {
+            _context = context;
 
+        }
+//[FromServices] CompanyContext context
         [HttpGet]
-        public async Task<IActionResult> FindAll([FromServices] CompanyContext context)
+        public async Task<IActionResult> FindAll()
         {
-            var departaments = await context.Departamentos
+            var departaments = await _context.Departamentos
             .OrderBy(c => c.Id)
             .ToListAsync();
             return departaments.Count > 0  ? Ok(departaments) : NoContent();
@@ -23,11 +28,11 @@ namespace Company.Controllers
 
         [HttpGet]
         [Route("{id}")]
-        public async Task<IActionResult> FindById([FromServices] CompanyContext context,int id)
+        public async Task<IActionResult> FindById(int id)
         {
             try
             {
-                var departament = await context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
+                var departament = await _context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
                 return departament != null ? Ok(departament) : NotFound("Departamento não encontrado");
             }
             catch (Exception)
@@ -37,14 +42,14 @@ namespace Company.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Insert([FromServices] CompanyContext context,Departamentos objeto)
+        public async Task<IActionResult> Insert(Departamentos objeto)
         {
             if(!ModelState.IsValid) {return BadRequest();}
 
             try
             {
-                await context.Departamentos.AddAsync(objeto);
-                await context.SaveChangesAsync();
+                await _context.Departamentos.AddAsync(objeto);
+                await _context.SaveChangesAsync();
                 return Created($"v1/departamentos/{objeto.Id}","Criado com sucesso");
             }
             catch (Exception)
@@ -56,9 +61,9 @@ namespace Company.Controllers
 
         [HttpPut]
         [Route("{id}")]
-        public async Task<IActionResult> Put([FromServices] CompanyContext context, int id, Departamentos objeto)
+        public async Task<IActionResult> Put(int id, Departamentos objeto)
         {
-            var departament = await context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
+            var departament = await _context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
 
             if(departament == null) {
                 return NotFound("Departamento não encontrado");
@@ -69,8 +74,8 @@ namespace Company.Controllers
 
             try
             {
-                context.Update(departament);
-                await context.SaveChangesAsync();
+                _context.Update(departament);
+                await _context.SaveChangesAsync();
                 return Ok("Departamento atualizado com sucesso");
             }
             catch (Exception)
@@ -81,9 +86,9 @@ namespace Company.Controllers
 
         [HttpDelete]
         [Route("{id}")]
-        public async Task<IActionResult> Delete([FromServices] CompanyContext context, int id)
+        public async Task<IActionResult> Delete(int id)
         {
-             var departament = await context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
+             var departament = await _context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
 
              if(departament == null) {
                 return NotFound("Departamento não encontrado");
@@ -91,8 +96,8 @@ namespace Company.Controllers
 
             try
             {
-                context.Departamentos.Remove(departament);
-                await context.SaveChangesAsync();
+                _context.Departamentos.Remove(departament);
+                await _context.SaveChangesAsync();
                 return Ok("Departamento Removido com sucesso");
             }
             catch (Exception)
