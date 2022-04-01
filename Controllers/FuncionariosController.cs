@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Company.Data;
 using Company.Models;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 namespace Company.Controllers
 {
     [EnableCors("MyPolicy")]
@@ -15,6 +10,11 @@ namespace Company.Controllers
     [Route("v1/funcionarios")]
     public class FuncionariosController : ControllerBase
     {
+        private IWebHostEnvironment _webHostEnviroment;
+        public FuncionariosController(IWebHostEnvironment webHostEnviroment) {
+            _webHostEnviroment = webHostEnviroment;
+        }
+
         [HttpGet]
         [Route("{id}")]
         public async Task<IActionResult> FindAll([FromServices] CompanyContext context, [FromRoute]int id) {
@@ -38,7 +38,7 @@ namespace Company.Controllers
                 return funcionario != null ? Ok(funcionario) : NotFound("Funcionário não encontrado");
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return NotFound("Funcionário não encontrado");
             }
@@ -146,12 +146,63 @@ namespace Company.Controllers
 
         }
 
+        [HttpPost]
+        [Route("upload")]
+        public Task<string> PostImage([FromForm] FileUpload objectFile)
+        {
+            try
+            {
+                if(objectFile.files.Length > 0) {
+                    string path = _webHostEnviroment.ContentRootPath + "\\uploads\\";
+
+                    if(!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+                    using (FileStream fileStream = System.IO.File.Create(path + objectFile.files.FileName)) {
+                        objectFile.files.CopyTo(fileStream);
+                        fileStream.Flush();
+                        return Task.FromResult( path + objectFile.files.FileName);
+                        //path +
+                    }
+                }
+                else {
+                    return Task.FromResult("Failed");
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return Task.FromResult(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("upload/{idFuncionario}")]
+        public async Task<IActionResult> GetImage([FromServices] CompanyContext context, [FromRoute] int idFuncionario) {
+             try
+            {
+                var funcionario = await context.Funcionarios.Where(y => y.Id == idFuncionario).FirstOrDefaultAsync();
+                string path = _webHostEnviroment.ContentRootPath + funcionario.Foto;
+
+                return funcionario != null? PhysicalFile(funcionario.Foto, contentType: "image/jpeg", enableRangeProcessing: true) : NotFound();
+
+            }
+            catch (Exception e)
+            {
+                return NotFound(e.Message);
+            }
+        }
+
+
 
         private bool CheckDepartament([FromServices] CompanyContext context, int id) {
             var departament = context.Departamentos.Where(x => x.Id == id).FirstOrDefault();
 
             return departament == null ? true : false;
         }
+
+
 
 
 

@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Company.Data;
 using Company.Models;
 using Microsoft.AspNetCore.Cors;
@@ -34,13 +30,10 @@ namespace Company.Controllers
                 var departament = await context.Departamentos.Where(x => x.Id == id).FirstOrDefaultAsync();
                 return departament != null ? Ok(departament) : NotFound("Departamento não encontrado");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return NotFound("Departamento não encontrado");
-            }
-
-
-            ;
+            };
         }
 
         [HttpPost]
@@ -54,7 +47,7 @@ namespace Company.Controllers
                 await context.SaveChangesAsync();
                 return Created($"v1/departamentos/{objeto.Id}","Criado com sucesso");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return BadRequest();
 
@@ -80,7 +73,7 @@ namespace Company.Controllers
                 await context.SaveChangesAsync();
                 return Ok("Departamento atualizado com sucesso");
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return BadRequest();
             }
@@ -102,7 +95,7 @@ namespace Company.Controllers
                 await context.SaveChangesAsync();
                 return Ok("Departamento Removido com sucesso");
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
                 return BadRequest();
