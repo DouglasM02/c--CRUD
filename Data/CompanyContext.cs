@@ -15,7 +15,7 @@ namespace Company.Data
         //public CompanyContext(DbContextOptions<CompanyContext> options): base(options){}
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql("User Id=postgres; Password=02031997; Host=localhost; Port=5433; Database=Company.db");
+            optionsBuilder.UseNpgsql("string de conexao");
         }
     }
 }
